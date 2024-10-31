@@ -1,4 +1,3 @@
-@"
 # Sworm-Agents - Traducteur & Correcteur
 
 Un service de traduction et correction automatique utilisant Ollama avec le modèle Mistral.
