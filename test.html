@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Traducteur & Correcteur</title>
+    <style>
+        body { 
+            padding: 20px; 
+            font-family: Arial; 
+            background-color: #f5f5f5; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea { 
+            width: 100%; 
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .result { 
+            margin-top: 20px; 
+        }
+        .card { 
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+        #status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status-error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .status-loading {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Traducteur & Correcteur</h2>
+        
+        <textarea id="inputText" placeholder="Entrez votre texte ici..."></textarea>
+        <button id="translateBtn" onclick="translate()">Traduire</button>
+        <div id="status"></div>
+        
+        <div class="result">
+            <div class="card">
+                <h3>Texte Original</h3>
+                <p id="originalText"></p>
+            </div>
+            <div class="card">
+                <h3>Traduction</h3>
+                <p id="translatedText"></p>
+            </div>
+            <div class="card">
+                <h3>Version Corrigée</h3>
+                <p id="finalText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        const statusDiv = document.getElementById('status');
+        const translateBtn = document.getElementById('translateBtn');
+
+        // Vérifier la connexion à l'API au chargement
+        window.onload = async function() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (!response.ok) throw new Error('API non disponible');
+                showStatus('API connectée', 'status-loading');
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
+            } catch (error) {
+                showStatus('Erreur de connexion à l\'API', 'status-error');
+            }
+        };
+
+        function showStatus(message, className) {
+            statusDiv.textContent = message;
+            statusDiv.className = className;
+            statusDiv.style.display = 'block';
+        }
+
+        async function translate() {
+            const inputText = document.getElementById('inputText').value.trim();
+            
+            if (!inputText) {
+                showStatus('Veuillez entrer un texte', 'status-error');
+                return;
+            }
+
+            translateBtn.disabled = true;
+            showStatus('Traduction en cours...', 'status-loading');
+
+            try {
+                const response = await fetch(`${API_URL}/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: inputText })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la traduction');
+                }
+
+                const data = await response.json();
+                
+                document.getElementById('originalText').textContent = data.original;
+                document.getElementById('translatedText').textContent = data.translated;
+                document.getElementById('finalText').textContent = data.final;
+                
+                statusDiv.style.display = 'none';
+            } catch (error) {
+                showStatus(`Erreur: ${error.message}`, 'status-error');
+            } finally {
+                translateBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html> 
